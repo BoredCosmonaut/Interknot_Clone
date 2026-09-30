@@ -13,6 +13,15 @@ export interface MessageWithSender extends Message {
     sender_avatar_url:string;
 }
 
+export interface ConversationHistory {
+    other_id:number;
+    other_username:string;
+    other_avatar_url:string;
+    last_content:string;
+    last_created_at:Date;
+    last_sender_id:number;
+}
+
 
 export async function createMessage(
     senderId:number,
@@ -26,14 +35,14 @@ export async function createMessage(
     [senderId, recipientId, content]
     );
 
-    return result.rows[0];
+    return result.rows[0]!;
 };
 
 export async function getConversation(
     userA:number,
     userB:number,
-    limit: 50,
-    offset:0
+    limit:number,
+    offset:number
 ): Promise<MessageWithSender[]> {
     const result = await pool.query<MessageWithSender>(
     `SELECT
@@ -52,5 +61,29 @@ export async function getConversation(
         LIMIT $3 OFFSET $4`,
         [userA, userB, limit, offset]
     );
-    return result.rows;
+    return result.rows.reverse();
 }
+
+export async function getInbox(userId:number): Promise<ConversationHistory[]> {
+    const result = await pool.query<ConversationHistory>(
+        `SELECT DISTINCT ON (other.id)
+        other.id         AS other_id,
+        other.username   AS other_username,
+        other.avatar_url AS other_avatar_url,
+        m.content        AS last_content,
+        m.created_at     AS last_created_at,
+        m.sender_id      AS last_sender_id
+        FROM messages m
+        JOIN users other
+        ON other.id = CASE
+                WHEN m.sender_id = $1 THEN m.recipient_id
+                ELSE m.sender_id
+            END
+        WHERE m.sender_id = $1 OR m.recipient_id = $1
+        ORDER BY other.id, m.created_at DESC`,
+        [userId]
+    );
+    return result.rows.sort(
+        (a,b)=> b.last_created_at.getTime() - a.last_created_at.getTime()
+    )
+};

@@ -11,7 +11,7 @@ export interface Comment{
 
 export interface CommentWithAuthor extends Comment {
     author_username:string,
-    author_avatar_utl:string | null
+    author_avatar_utl:string 
 }
 
 export async function createComment(
@@ -26,7 +26,7 @@ export async function createComment(
         [postId, authorId, content]
     );
 
-    return result.rows[0];
+    return result.rows[0]!;
 };
 
 export async function getCommentsByPost(postId:number): Promise<CommentWithAuthor[]> {

@@ -11,7 +11,7 @@ export interface Post {
 
 export interface PostWithAuthor extends Post {
     author_username:string;
-    author_avatar_url: string | null;
+    author_avatar_url: string ;
 }
 
 

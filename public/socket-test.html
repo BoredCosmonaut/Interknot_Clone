@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Socket test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 40px auto; padding: 0 16px; }
+    input, textarea, button { font: inherit; padding: 6px 8px; }
+    #token { width: 100%; }
+    #log { border: 1px solid #ccc; padding: 12px; height: 260px; overflow-y: auto; white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 13px; }
+    .row { margin-bottom: 12px; }
+    label { display: block; font-weight: 600; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Socket test</h1>
+
+  <div class="row">
+    <label>JWT token</label>
+    <input id="token" placeholder="paste token from /api/auth/login">
+  </div>
+
+  <div class="row">
+    <button id="connect">Connect</button>
+    <button id="disconnect">Disconnect</button>
+  </div>
+
+  <div class="row">
+    <label>Recipient user id</label>
+    <input id="recipient" type="number" value="2">
+  </div>
+
+  <div class="row">
+    <label>Message</label>
+    <input id="content" placeholder="type something">
+    <button id="send">Send</button>
+  </div>
+
+  <div class="row">
+    <label>Log</label>
+    <div id="log"></div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script>
+    const logEl = document.getElementById('log');
+    let socket = null;
+
+    function log(...parts) {
+      const line = parts
+        .map(p => typeof p === 'string' ? p : JSON.stringify(p, null, 2))
+        .join(' ');
+      logEl.textContent += line + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    document.getElementById('connect').onclick = () => {
+      const token = document.getElementById('token').value.trim();
+
+      if (socket) socket.disconnect();
+
+      socket = io('http://localhost:3000', { auth: { token } });
+
+      socket.on('connect', () => log('connected, socket id:', socket.id));
+      socket.on('connect_error', (err) => log('connect_error:', err.message));
+      socket.on('disconnect', (reason) => log('disconnected:', reason));
+      socket.on('message:new', (msg) => log('message:new ->', msg));
+    };
+
+    document.getElementById('disconnect').onclick = () => {
+      if (socket) socket.disconnect();
+    };
+
+    document.getElementById('send').onclick = () => {
+      if (!socket || !socket.connected) return log('not connected');
+
+      const recipientId = Number(document.getElementById('recipient').value);
+      const content = document.getElementById('content').value;
+
+      socket.emit('message:send', { recipientId, content }, (ack) => {
+        log('ack:', ack);
+      });
+
+      document.getElementById('content').value = '';
+    };
+  </script>
+</body>
+</html>
