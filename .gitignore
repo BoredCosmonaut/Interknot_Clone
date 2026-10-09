@@ -1,4 +1,8 @@
-node_modules
-dist
+node_modules/
+dist/
 .env
-.npmrc
+.env.local
+backend/uploads/*
+!backend/uploads/.gitignore
+backend/public/avatars/*
+!backend/public/avatars/.gitignore
