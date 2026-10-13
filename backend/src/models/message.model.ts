@@ -76,7 +76,7 @@ export async function getInbox(userId:number): Promise<ConversationHistory[]> {
         m.content        AS last_content,
         m.created_at     AS last_created_at,
         m.sender_id      AS last_sender_id,
-        other.display_name AS other_display_name,
+        other.display_name AS other_display_name
         FROM messages m
         JOIN users other
         ON other.id = CASE
@@ -91,3 +91,45 @@ export async function getInbox(userId:number): Promise<ConversationHistory[]> {
         (a,b)=> b.last_created_at.getTime() - a.last_created_at.getTime()
     )
 };
+
+export async function getMessageById(
+  id: number
+): Promise<MessageWithSender | null> {
+  const result = await pool.query<MessageWithSender>(
+    `SELECT
+       m.id,
+       m.sender_id,
+       m.recipient_id,
+       m.content,
+       m.created_at,
+       u.username     AS sender_username,
+       u.avatar_url   AS sender_avatar_url,
+       u.display_name AS sender_display_name
+     FROM messages m
+     JOIN users u ON u.id = m.sender_id
+     WHERE m.id = $1`,
+    [id]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+export async function markConversationRead(userId:number,otherId:number): Promise<void> {
+    await pool.query(
+        `UPDATE messages
+        SET read_at = NOW()
+        WHERE recipient_id = $1 AND sender_id = $2 AND read_at IS NULL`,
+        [userId, otherId]
+    );
+}
+
+
+export async function getUnreadCount(userId:number): Promise<number> {
+    const result = await pool.query<{count:string}>(
+        `SELECT COUNT(*) AS count
+        FROM messages
+        WHERE recipient_id = $1 AND read_at IS NULL`,
+        [userId]
+    );
+    return Number(result.rows[0]!.count);
+}

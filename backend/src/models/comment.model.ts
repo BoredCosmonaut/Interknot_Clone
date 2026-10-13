@@ -38,6 +38,7 @@ export async function getCommentsByPost(postId:number): Promise<CommentWithAutho
         c.author_id,
         c.content,
         c.created_at,
+        c.edited_at,
         u.username   AS author_username,
         u.avatar_url AS author_avatar_url,
         u.display_name AS author_display_name

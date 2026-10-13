@@ -1,6 +1,6 @@
 import type { Server } from "socket.io";
 import { verifyToken } from "../utils/jwt.js";
-import { createMessage } from "../models/message.model.js";
+import { createMessage,getMessageById } from "../models/message.model.js";
 import { findPublicUserById } from "../models/user.model.js";
 
 export function registerSocketHandler(io: Server) {
@@ -48,9 +48,10 @@ export function registerSocketHandler(io: Server) {
                     return ack?.({error:'User does not exist'})
                 }
 
-                const message = await createMessage(user.userId,recipientId,content.trim());
-                io.to(`user:${recipientId}`).emit('message:new',message);
-                ack?.({message});
+                const created = await createMessage(user.userId, recipientId, content.trim());
+                const message = await getMessageById(created.id);                
+                io.to(`user:${recipientId}`).to(`user:${user.userId}`).emit('message:new', message);
+                ack?.({ message });
             } catch (err) {
                 console.error('message send failed:', err);
                 ack?.({ error: 'Something went wrong' });

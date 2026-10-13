@@ -123,6 +123,14 @@
             <Icon icon="lucide:pencil" width="14" />
             EDIT
           </button>
+          <RouterLink
+            v-if="!isMe"
+            :to="`/messages/${user.id}`"
+            class="msg-btn"
+          >
+            <Icon icon="lucide:message-square" width="14" />
+            MESSAGE
+          </RouterLink>
         </div>
       </section>
 
@@ -533,5 +541,24 @@
   .identity h1 {
     font-size: 30px;
   }
+}
+
+.msg-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 8px 16px;
+  border-radius: 3px;
+  background: #2a2a2a;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.msg-btn:hover {
+  background: var(--accent);
+  color: #0a0a0a;
 }
 </style>

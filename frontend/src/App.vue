@@ -1,14 +1,62 @@
 <script setup lang="ts">
-import { RouterView, RouterLink } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { useRouter } from 'vue-router';
+import { useRouter,useRoute,RouterView, RouterLink } from 'vue-router';
 import { Icon } from '@iconify/vue';
-
+import { ref, watch } from 'vue';
+import { getSocket,disconnectSocket } from '@/lib/socket';
+import { api } from '@/lib/api';
+const route = useRoute();
+const unread = ref(0);
 const auth = useAuthStore();
 const router = useRouter();
 const base = import.meta.env.VITE_API_URL;
 
+
+
+function watchMessages() {
+  getSocket().on('message:new', (msg: { sender_id: number }) => {
+    const mine = msg.sender_id === auth.user?.id;
+    const fromThisThread = route.path === `/messages/${msg.sender_id}`;
+    console.log('badge check:', { sender: msg.sender_id, path: route.path, mine, fromThisThread });
+    if (!mine && !fromThisThread) unread.value++;
+  });
+}
+
+async function loadUnread() {
+  try {
+    const res = await api<{count:number}>('/api/messages/unread');
+    console.log('unread count:', res.count);
+    unread.value = res.count;
+  } catch  {
+    
+  }
+}
+
+watch(
+  ()=> auth.isLoggedIn,
+  (loggedIn) => {
+      if(loggedIn) {
+        watchMessages();
+        loadUnread();
+      } else {
+        unread.value = 0;
+      }
+    },
+  {immediate: true}
+);
+
+watch(
+  () => route.path,
+  (p) => {
+    if(p.startsWith('/messages/')){
+      unread.value = 0;
+    }
+  }
+)
+
+
 function logout() {
+  disconnectSocket();
   auth.logOut();
   router.push('/login');
 }
@@ -22,7 +70,11 @@ function logout() {
       <Icon icon="lucide:house" width="16" />
       <span>INTER-KNOT</span>
     </RouterLink>
-
+    <RouterLink to="/messages" class="nav-link">
+      <Icon icon="lucide:mail" width="16" />
+      <span>MESSAGES</span>
+      <span v-if="unread > 0" class="badge">{{ unread }}</span>
+    </RouterLink>
     <RouterLink
       v-if="auth.user"
       :to="`/u/${auth.user.username}`"
@@ -126,4 +178,42 @@ function logout() {
   background: var(--danger);
   color: #fff;
 }
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #2a2a2a;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 8px 16px;
+  border-radius: 3px;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  background: #3a3a3a;
+}
+
+.nav-link.router-link-active {
+  background: var(--accent);
+  color: #0a0a0a;
+}
+
+.badge {
+  background: var(--danger);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+}
+
 </style>

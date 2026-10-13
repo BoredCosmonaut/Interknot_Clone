@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import {ref,computed} from 'vue';
 import { api } from "@/lib/api";
+import { disconnectSocket } from "@/lib/socket";
 
 export interface AuthUser {
     id: number;
@@ -48,6 +49,7 @@ export const useAuthStore = defineStore('auth',() => {
         user.value = null;
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        disconnectSocket();
     }
 
     function restore() {
