@@ -5,12 +5,57 @@ import { Icon } from '@iconify/vue';
 import { ref, watch } from 'vue';
 import { getSocket,disconnectSocket } from '@/lib/socket';
 import { api } from '@/lib/api';
+
+
+interface NotificationItem {
+  id:number;
+  type:string;
+  post_id:number | null;
+  created_at:string;
+  read_at:string | null;
+  actor_username: string;
+  actor_display_name: string;
+  actor_avatar_url:string;
+  post_title:string | null;
+}
+
+
 const route = useRoute();
 const unread = ref(0);
 const auth = useAuthStore();
 const router = useRouter();
 const base = import.meta.env.VITE_API_URL;
+const notifs = ref<NotificationItem[]>([]);
+const notifCount = ref(0);
+const notifOpen = ref(false);
 
+
+
+async function loadNotifCount() {
+  try {
+    const res = await api<{count:number}>('/api/notifications/unread');
+    notifCount.value = res.count;
+  } catch  {
+  }
+};
+
+async function  openNotifs() {
+  notifOpen.value = !notifOpen.value;
+  if(!notifOpen.value) return;
+  try {
+    notifs.value = await api<NotificationItem[]>('/api/notifications');
+    await api('/api/notifications/read', {method:'POST'});
+    notifCount.value = 0;
+  } catch {
+  }
+};
+
+
+function watchNotifs() {
+  getSocket().on('notification:new', () => {
+    notifCount.value++
+  })
+}
 
 
 function watchMessages() {
@@ -37,6 +82,8 @@ watch(
   (loggedIn) => {
       if(loggedIn) {
         watchMessages();
+        watchNotifs();
+        loadNotifCount();
         loadUnread();
       } else {
         unread.value = 0;
@@ -75,6 +122,31 @@ function logout() {
       <span>MESSAGES</span>
       <span v-if="unread > 0" class="badge">{{ unread }}</span>
     </RouterLink>
+    <div class="bell-wrap">
+      <button class="bell" aria-label="Notifications" @click="openNotifs">
+        <Icon icon="lucide:bell" width="18" />
+        <span v-if="notifCount > 0" class="badge dot">{{ notifCount }}</span>
+      </button>
+
+      <div v-if="notifOpen" class="dropdown">
+        <p v-if="notifs.length === 0" class="empty">nothing yet</p>
+
+          <RouterLink
+            v-for="n in notifs"
+            :key="n.id"
+            :to="n.post_id ? `/?post=${n.post_id}` : '/'"
+            class="notif"
+            @click="notifOpen = false"
+          >
+          <img :src="base + n.actor_avatar_url" alt="" />
+          <span>
+            <strong>{{ n.actor_display_name }}</strong>
+            commented on
+            <strong>{{ n.post_title }}</strong>
+          </span>
+        </RouterLink>
+      </div>
+    </div>
     <RouterLink
       v-if="auth.user"
       :to="`/u/${auth.user.username}`"
@@ -214,6 +286,81 @@ function logout() {
   align-items: center;
   justify-content: center;
   padding: 0 5px;
+}
+
+
+.bell-wrap {
+  position: relative;
+}
+
+.bell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 38px;
+  height: 38px;
+  background: #2a2a2a;
+  color: var(--text);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.bell:hover {
+  background: #3a3a3a;
+}
+
+.badge.dot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 320px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+  padding: 6px;
+  z-index: 50;
+}
+
+.notif {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
+  text-decoration: none;
+}
+
+.notif:hover {
+  background: #2a2a2a;
+}
+
+.notif img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--panel-raised);
+}
+
+.dropdown .empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 12px;
+  margin: 0;
 }
 
 </style>

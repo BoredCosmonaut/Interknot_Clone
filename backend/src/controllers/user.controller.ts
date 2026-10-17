@@ -1,7 +1,10 @@
 import type { Response,Request } from "express";
-import { findPublicUserByUsername,updateUserProfile } from "../models/user.model.js";
+import { findPublicUserById, findPublicUserByUsername,updateUserProfile } from "../models/user.model.js";
 import { getPostsByAuthor } from "../models/post.model.js";
-import { isValidAvatar,avatarPath } from "../constants/avatars.js";
+import sharp from "sharp";
+import crypto from 'node:crypto';
+import path from 'node:path';
+import fs from 'node:fs/promises';
 
 export async function profile(req:Request,res:Response) {
     const {username} = req.params;
@@ -49,49 +52,68 @@ export async function userPosts(req:Request,res:Response) {
     }
 }
 
-export async function updateMe(req:Request,res:Response) {
-    if(!req.user) {
-        return res.status(401).json({error:'Not logged in'});
+export async function updateMe(req: Request, res: Response) {
+    console.log('updateMe hit, file:', !!req.file);
+    if (!req.user) {
+        return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const {bio,avatar,display_name} = req.body;
-    
+    const { bio, display_name } = req.body;
+
     if (bio !== undefined && typeof bio !== 'string') {
-    return res.status(400).json({ error: 'Bio must be a string' });
+        return res.status(400).json({ error: 'Bio must be a string' });
+    }
+
+    if (typeof bio === 'string' && bio.length > 300) {
+        return res.status(400).json({ error: 'Bio too long (max 300)' });
     }
 
     if (display_name !== undefined) {
-    if (typeof display_name !== 'string' || display_name.trim().length === 0) {
+        if (typeof display_name !== 'string' || display_name.trim().length === 0) {
         return res.status(400).json({ error: 'Display name cannot be empty' });
-    }
-    if (display_name.length > 40) {
+        }
+        if (display_name.length > 40) {
         return res.status(400).json({ error: 'Display name too long (max 40)' });
-    }
-    }
-
-    if (typeof bio === 'string' && bio.length > 100) {
-        return res.status(400).json({ error: 'Bio too long (max 100)' });
+        }
     }
 
-    if (avatar !== undefined && !isValidAvatar(avatar)) {
-        return res.status(400).json({ error: 'Invalid avatar' });
-    }
+    let newAvatarPath: string | null = null;
 
     try {
+        const current = await findPublicUserById(req.user.userId);
+        if (!current) {
+        return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (req.file) {
+        const filename = `${crypto.randomBytes(16).toString('hex')}.webp`;
+
+        await sharp(req.file.buffer)
+            .resize(256, 256, { fit: 'cover' })
+            .webp({ quality: 85 })
+            .toFile(path.join('uploads', filename));
+
+        newAvatarPath = `/uploads/${filename}`;
+        }
+
         const user = await updateUserProfile(
-            req.user.userId,
-            bio ?? null,
-            avatar ? avatarPath(avatar) : null,
-            display_name?.trim() ?? null
+        req.user.userId,
+        bio ?? null,
+        newAvatarPath,
+        display_name?.trim() ?? null
         );
 
-        if(!user) {
-            return res.status(404).json({error:'User not found'});
+        if (newAvatarPath && current.avatar_url.startsWith('/uploads/')) {
+        const old = path.basename(current.avatar_url);
+        await fs.unlink(path.join('uploads', old)).catch(() => {});
         }
 
         return res.json(user);
     } catch (err) {
-        console.error('Update profile failed:',err);
-        return res.status(500).json({error:'Something went wrong'});
+        if (newAvatarPath) {
+        await fs.unlink(path.join('uploads', path.basename(newAvatarPath))).catch(() => {});
+        }
+        console.error('update profile failed:', err);
+        return res.status(500).json({ error: 'Something went wrong' });
     }
 }

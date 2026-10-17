@@ -159,7 +159,7 @@ onUnmounted(() => {
           </div>
 
           <div class="text-col">
-            <h2>[Post] {{ post.title }}</h2>
+            <h2>{{ post.title }}</h2>
             <p>{{ post.content }}</p>
           </div>
         </div>

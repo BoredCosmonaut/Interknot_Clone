@@ -1,26 +1,22 @@
-import multer from "multer";
-import path from "node:path";
-import crypto from 'node:crypto';
+import multer from 'multer';
 
-const storage = multer.diskStorage({
-    destination: (_req,_file,cb) => {
-        cb(null,'uploads/');
-    },
-    filename:(_req,file,cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        const name = crypto.randomBytes(16).toString('hex');
-        cb(null,`${name}${ext}`);
-    } ,
-});
+
+const imageFilter: multer.Options['fileFilter'] = (_req,file,cb) => {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  if(!allowed.includes(file.mimetype)) {
+    return cb(new Error('Only image files are allowed'));
+  }
+  cb(null,true);
+}
 
 export const uploadImage = multer({
-    storage,
-    limits:{fileSize: 10 * 1024 * 1024},
-    fileFilter: (_req,file,cb) => {
-        const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        if(!allowed.includes(file.mimetype)) {
-            return cb(new Error('Only image files are allowed'));
-        }
-        cb(null,true);
-    },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: imageFilter,
 }).single('image');
+
+export const uploadAvatar = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: imageFilter,
+}).single('avatar');

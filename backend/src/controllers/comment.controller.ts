@@ -1,6 +1,8 @@
 import { createComment,getCommentsByPost,deleteComment, updateComment } from "../models/comment.model.js";
 import type { Request,Response } from "express";
 import { getPostById } from "../models/post.model.js";
+import { createNotification } from "../models/notifications.model.js";
+import { getIo } from "../sockets/io.js";
 
 export async function create(req:Request,res:Response) {
     if(!req.user) {
@@ -31,6 +33,10 @@ export async function create(req:Request,res:Response) {
         }
 
         const comment = await createComment(postId,req.user.userId, content.trim());
+        if(post.author_id !== req.user.userId) {
+            await createNotification(post.author_id,req.user.userId,'comment',postId);
+            getIo().to(`user:${post.author_id}`).emit('notification:new');
+        }
         return res.status(201).json(comment);
     } catch (err) {
         console.error('create comment failed:', err);

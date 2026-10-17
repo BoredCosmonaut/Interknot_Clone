@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import {ref,computed,onMounted,watch} from 'vue';
+    import {ref,computed,onMounted,watch, onUnmounted} from 'vue';
     import { useRoute } from 'vue-router';
     import { Icon } from '@iconify/vue';
     import { ApiError,api } from '@/lib/api';
@@ -7,7 +7,6 @@
     import type { PostWithAuthor } from '@/types';
     import PostCard from '@/components/PostCard.vue';
     import PostModal from '@/components/PostModal.vue';
-
     interface PublicUser {
         id:number,
         username:string,
@@ -28,7 +27,8 @@
 
     const loading = ref(true);
     const error = ref('');
-
+    const avatarFile = ref<File | null>(null);
+    const avatarPreview = ref('')
     const editing = ref(false);
     const draftName = ref('');
     const draftBio = ref('');
@@ -54,50 +54,63 @@
         }
     }
 
-    async function startEdit() {
-        if(!user.value) return;
-
-        draftName.value = user.value.display_name;
-        draftBio.value = user.value.bio ?? '';
-        draftAvatar.value = user.value.avatar_url.split('/').pop()?.replace('.png', '') ?? '';
-        editing.value = true;
-        if(avatars.value.length === 0) {
-            try {
-                avatars.value = await api<string[]>('/api/users/avatars');
-            } catch  {
-                
-            }
-        }
+    function startEdit() {
+      if (!user.value) return;
+      draftName.value = user.value.display_name;
+      draftBio.value = user.value.bio ?? '';
+      clearAvatarDraft();
+      editing.value = true;
     }
 
     async function save() {
-        if(saving.value) return;
-        saving.value = true;
-        error.value = '';
+      if (saving.value) return;
+      saving.value = true;
+      error.value = '';
 
-        try {
-            user.value = await api<PublicUser>('/api/users/me', {
-                method:'PATCH',
-                body: JSON.stringify({
-                    display_name: draftName.value.trim(),
-                    bio:draftBio.value.trim(),
-                    avatar:draftAvatar.value,
-                })
-            });
-            editing.value = false;
-            if (isMe.value && user.value) {
-              auth.user = user.value;
-              localStorage.setItem('user', JSON.stringify(user.value));
-            }
-            await load();
-        } catch (err) {
-            error.value = err instanceof ApiError ? err.message: 'Could not save';
-        } finally {
-            saving.value = false;
+      const form = new FormData();
+      form.append('display_name', draftName.value.trim());
+      form.append('bio', draftBio.value.trim());
+      if (avatarFile.value) form.append('avatar', avatarFile.value);
+
+      try {
+        console.log('file',avatarFile.value)
+        user.value = await api<PublicUser>('/api/users/me', {
+          method: 'PATCH',
+          body: form,
+        });
+
+        if (isMe.value && user.value) {
+          auth.user = user.value;
+          localStorage.setItem('user', JSON.stringify(user.value));
         }
+
+        clearAvatarDraft();
+        editing.value = false;
+        await load();
+      } catch (err) {
+        error.value = err instanceof ApiError ? err.message : 'Could not save';
+      } finally {
+        saving.value = false;
+      }
+    }
+
+    function onAvatarPick(e:Event) {
+      const input = e.target as HTMLInputElement;
+      const picked = input.files?.[0];
+      if(!picked) return;
+      avatarFile.value = picked;
+      if(avatarPreview.value) URL.revokeObjectURL(avatarPreview.value);
+      avatarPreview.value = URL.createObjectURL(picked);
+    }
+
+    function clearAvatarDraft() {
+      if(avatarPreview.value) URL.revokeObjectURL(avatarPreview.value);
+      avatarPreview.value = '';
+      avatarFile.value = null;
     }
 
     onMounted(load);
+    onUnmounted(clearAvatarDraft);
     watch(() => route.params.username,load);
 
 </script>
@@ -177,17 +190,14 @@
             </label>
 
             <span class="tag">[ AVATAR ]</span>
-            <div class="avatar-grid">
-              <button
-                v-for="a in avatars"
-                :key="a"
-                class="avatar-pick"
-                :class="{ active: draftAvatar === a }"
-                @click="draftAvatar = a"
-              >
-                <img :src="`${base}/avatars/${a}.png`" :alt="a" />
-              </button>
-            </div>
+            <label class="avatar-upload">
+              <img :src="avatarPreview || base + user!.avatar_url" alt="" />
+              <span>
+                <Icon icon="lucide:image-plus" width="16" />
+                {{ avatarFile ? 'change image' : 'upload image' }}
+              </span>
+              <input type="file" accept="image/*" @change="onAvatarPick" />
+            </label>
 
             <button class="save" :disabled="saving" @click="save">
               <span>{{ saving ? 'SAVING' : 'SAVE' }}</span>
@@ -468,22 +478,48 @@
   background: #323232;
 }
 
-.avatar-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
-  gap: 10px;
+.avatar-upload {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
   margin-top: -6px;
+  padding: 10px;
+  background: #2a2a2a;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  transition: background 0.12s, color 0.12s;
 }
 
-.avatar-pick {
-  padding: 0;
-  border: 2px solid transparent;
+.avatar-upload:hover {
+  background: #323232;
+  color: var(--accent);
+}
+
+.avatar-upload img {
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
+  object-fit: cover;
   background: var(--panel-raised);
+  flex-shrink: 0;
+}
+
+.avatar-upload span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.avatar-upload input[type='file'] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
   cursor: pointer;
-  overflow: hidden;
-  aspect-ratio: 1;
-  transition: border-color 0.12s, transform 0.12s;
 }
 
 .avatar-pick img {

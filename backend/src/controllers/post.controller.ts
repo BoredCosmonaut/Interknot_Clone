@@ -2,6 +2,8 @@ import type { Response,Request } from "express";
 import { createPost,deletePost,getFeed,getPostById } from "../models/post.model.js";
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import sharp from 'sharp';
+import crypto from 'node:crypto';
 
 export async function create(req:Request,res:Response) {
     if(!req.user) {
@@ -21,7 +23,15 @@ export async function create(req:Request,res:Response) {
         return res.status(400).json({error:'Title too long (max 50)'});
     }
 
-    const imageUrl = `/uploads/${req.file.filename}`;
+    const name = crypto.randomBytes(16).toString('hex');
+    const filename = `${name}.webp`;
+
+    await sharp(req.file.buffer, { animated: true })
+    .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 82 })
+    .toFile(path.join('uploads', filename));
+
+    const imageUrl = `/uploads/${filename}`;
 
     try {
         const post = await createPost(req.user.userId,title.trim(),content.trim(),imageUrl);

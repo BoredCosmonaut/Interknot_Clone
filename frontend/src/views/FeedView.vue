@@ -1,21 +1,37 @@
 <script setup lang="ts">
-    import {ref, onMounted} from 'vue';
+    import {ref, onMounted, onUnmounted, nextTick} from 'vue';
     import { api,ApiError } from '@/lib/api';
     import type { PostWithAuthor } from '@/types';
     import PostCard from '@/components/PostCard.vue';
     import PostModal from '../components/PostModal.vue';
     import CreatePostModal from '@/components/CreatePostModal.vue';
+    import {useRoute,useRouter} from 'vue-router';
+    import { watch } from 'vue';
+    
+    const route = useRoute();
+    const router = useRouter();
     const selected = ref<PostWithAuthor | null>(null);
     const posts = ref<PostWithAuthor[]>([]);
     const loading = ref(true);
     const error = ref('');
     const creating = ref(false);
+    const offset = ref(0);
+    const hasMore = ref(true);
+    const loadingMore = ref(false);
+    const LIMIT = 20;
+    const sentinel = ref<HTMLElement | null>(null);
+    let observer: IntersectionObserver | null = null;
+
     async function load() {
         loading.value = true;
         error.value = '';
-
+        offset.value = 0;
+        hasMore.value = true;
         try {
-            posts.value = await api<PostWithAuthor[]>('/api/posts');
+            const batch = await api<PostWithAuthor[]>(`/api/posts?limit=${LIMIT}&offset=0`);
+            posts.value = batch;
+            offset.value = batch.length;
+            hasMore.value = batch.length === LIMIT;
         } catch (err) {
             error.value = err instanceof ApiError ? err.message : 'Couldnt load feed';
         } finally {
@@ -23,7 +39,54 @@
         }
     }
 
-    onMounted(load);
+    async function loadMore() {
+      if(loadingMore.value || !hasMore.value) return;
+      loadingMore.value = true;
+
+      try {
+        const batch = await api<PostWithAuthor[]>(`/api/posts?limit=${LIMIT}&offset=${offset.value}`);
+        posts.value.push(...batch);
+        offset.value += batch.length;
+        hasMore.value = batch.length === LIMIT; 
+      } catch {
+      } finally {
+        loadingMore.value = false;
+      }
+    }
+
+
+    async function openFromQuery() {
+      const raw = route.query.post;
+      if(!raw) return;
+
+      const id = Number(raw);
+      if(!Number.isInteger(id) || id < 1) return;
+
+      try {
+        selected.value = await api<PostWithAuthor>(`/api/posts/${id}`);
+      } catch {
+        
+      }
+
+      router.replace({query: {}});
+    };
+
+    onMounted(async () => {
+      await load();
+      openFromQuery();
+      await nextTick();
+
+      observer = new IntersectionObserver((entries) => {
+        console.log('sentinel visible:', entries[0]?.isIntersecting);
+        if(entries[0]?.isIntersecting) loadMore();
+      }, {rootMargin:'400px'});
+
+      if(sentinel.value ) observer.observe(sentinel.value);
+    });
+
+    onUnmounted(() => observer?.disconnect());
+
+    watch(() => route.query.post, openFromQuery);
 
 </script>
 
@@ -47,6 +110,10 @@
         :post="post"
         @click="selected = post"
         />
+    </div>
+    <div ref="sentinel" class="sentinel">
+      <span v-if="loadingMore">loading more...</span>
+      <span v-else-if="!hasMore && posts.length > 0">— end of feed —</span>
     </div>
     <PostModal
     v-if="selected"
@@ -125,4 +192,14 @@
 .create-btn:hover {
   background: #fff04d;
 }
+
+.sentinel {
+  display: flex;
+  justify-content: center;
+  padding: 30px 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
 </style>
