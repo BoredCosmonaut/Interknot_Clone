@@ -1,5 +1,5 @@
 import type { Response,Request } from "express";
-import { createPost,deletePost,getFeed,getPostById } from "../models/post.model.js";
+import { createPost,deletePost,deletePostAsAdmin,getFeed,getPostById } from "../models/post.model.js";
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
@@ -88,7 +88,7 @@ export async function removePost(req:Request,res:Response) {
     }
 
     try {
-        const post = await deletePost(id,req.user.userId);
+        const post = req.user.isAdmin ? await deletePostAsAdmin(id) : await deletePost(id,req.user.userId);
         if(!post) {
             return res.status(404).json({ error: 'Post not found' });
         };

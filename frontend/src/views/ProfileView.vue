@@ -7,6 +7,9 @@
     import type { PostWithAuthor } from '@/types';
     import PostCard from '@/components/PostCard.vue';
     import PostModal from '@/components/PostModal.vue';
+    import ReportModal from '@/components/ReportModal.vue';
+
+
     interface PublicUser {
         id:number,
         username:string,
@@ -16,6 +19,7 @@
         created_at:string;
     }
 
+    const reportingUser = ref(false);
     const route = useRoute();
     const auth = useAuthStore();
     const base = import.meta.env.VITE_API_URL;
@@ -73,15 +77,14 @@
       if (avatarFile.value) form.append('avatar', avatarFile.value);
 
       try {
-        console.log('file',avatarFile.value)
         user.value = await api<PublicUser>('/api/users/me', {
           method: 'PATCH',
           body: form,
         });
 
-        if (isMe.value && user.value) {
-          auth.user = user.value;
-          localStorage.setItem('user', JSON.stringify(user.value));
+        if (isMe.value && user.value && auth.user) {
+          auth.user = { ...auth.user, ...user.value };
+          localStorage.setItem('user', JSON.stringify(auth.user));
         }
 
         clearAvatarDraft();
@@ -135,6 +138,15 @@
           <button v-if="isMe" class="edit-btn" @click="startEdit">
             <Icon icon="lucide:pencil" width="14" />
             EDIT
+          </button>
+          <button
+            v-if="!isMe"
+            class="report-btn"
+            aria-label="Report user"
+            @click="reportingUser = true"
+          >
+            <Icon icon="lucide:flag" width="14" />
+            REPORT
           </button>
           <RouterLink
             v-if="!isMe"
@@ -206,6 +218,12 @@
           </div>
         </div>
       </div>
+      <ReportModal
+        v-if="reportingUser"
+        target-type="user"
+        :target-id="user.id"
+        @close="reportingUser = false"
+      />
     </template>
   </div>
 </template>
@@ -596,5 +614,26 @@
 .msg-btn:hover {
   background: var(--accent);
   color: #0a0a0a;
+}
+
+.report-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 3px;
+  background: #2a2a2a;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.report-btn:hover {
+  background: var(--danger);
+  color: #fff;
 }
 </style>

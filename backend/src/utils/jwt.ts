@@ -10,6 +10,7 @@ if(!secret) {
 export interface tokenPayload {
     userId:number;
     username:string;
+    isAdmin:boolean;
 };
 
 export function signToken(payload: tokenPayload): string {

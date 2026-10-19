@@ -1,4 +1,4 @@
-import { createComment,getCommentsByPost,deleteComment, updateComment } from "../models/comment.model.js";
+import { createComment,getCommentsByPost,deleteComment, updateComment, deleteCommentAsAdmin } from "../models/comment.model.js";
 import type { Request,Response } from "express";
 import { getPostById } from "../models/post.model.js";
 import { createNotification } from "../models/notifications.model.js";
@@ -71,7 +71,7 @@ export async function removeComment(req:Request,res:Response) {
     }
 
     try {
-        const deleted = await deleteComment(commentId,req.user.userId);
+        const deleted = req.user.isAdmin ? await deleteCommentAsAdmin(commentId) : await deleteComment(commentId,req.user.userId);
         if(!deleted) {
             return res.status(404).json({ error: 'Comment not found' });
         }

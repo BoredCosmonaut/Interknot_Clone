@@ -72,3 +72,20 @@ export async function updateComment(id:number,authorId:number,content:string): P
 
     return result.rows[0] ?? null;
 }
+
+export async function deleteCommentAsAdmin(id:number):Promise<boolean> {
+    const result = await pool.query(
+        `DELETE FROM comments WHERE id = $1`,
+        [id]
+    );
+    return result.rowCount === 1;
+}
+
+export async function getCommentById(id:number): Promise<Comment | null> {
+    const result = await pool.query<Comment>(
+        `SELECT * FROM comments WHERE id = $1`,
+        [id]
+    )
+
+    return result.rows[0] ?? null;
+}

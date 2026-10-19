@@ -4,6 +4,7 @@ import { Icon } from '@iconify/vue';
 import { api, ApiError } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
 import type { PostWithAuthor } from '@/types';
+import ReportModal from '@/components/ReportModal.vue';
 
 const props = defineProps<{ post: PostWithAuthor }>();
 const emit = defineEmits<{ close: []; changed: [] }>();
@@ -30,6 +31,8 @@ const error = ref('');
 
 const editingId = ref<number | null>(null);
 const editDraft = ref('');
+
+const reporting = ref<{ type: 'post' | 'comment'; id: number } | null>(null);
 
 async function loadComments() {
   try {
@@ -109,7 +112,7 @@ async function deletePost() {
 }
 
 function onKey(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close');
+  if (e.key === 'Escape' && !reporting.value) emit('close');
 }
 
 onMounted(() => {
@@ -138,18 +141,29 @@ onUnmounted(() => {
           </span>
         </div>
 
-        <button
-          v-if="post.author_id === auth.user?.id"
-          class="del-post"
-          aria-label="Delete post"
-          @click="deletePost"
-        >
-          <Icon icon="lucide:trash-2" width="16" />
-        </button>
+        <div class="bar-actions">
+          <button
+            v-if="post.author_id !== auth.user?.id"
+            class="icon-btn"
+            aria-label="Report post"
+            @click="reporting = { type: 'post', id: post.id }"
+          >
+            <Icon icon="lucide:flag" width="16" />
+          </button>
 
-        <button class="close" aria-label="Close" @click="emit('close')">
-          <Icon icon="lucide:x" width="18" />
-        </button>
+          <button
+            v-if="post.author_id === auth.user?.id || auth.user?.is_admin"
+            class="icon-btn"
+            aria-label="Delete post"
+            @click="deletePost"
+          >
+            <Icon icon="lucide:trash-2" width="16" />
+          </button>
+
+          <button class="close" aria-label="Close" @click="emit('close')">
+            <Icon icon="lucide:x" width="18" />
+          </button>
+        </div>
       </header>
 
       <div class="columns">
@@ -193,12 +207,30 @@ onUnmounted(() => {
                 <template v-else>
                   <p>{{ c.content }}</p>
 
-                  <div v-if="c.author_id === auth.user?.id" class="c-actions">
-                    <button aria-label="Edit comment" @click="startEdit(c)">
+                  <div v-if="auth.user" class="c-actions">
+                    <button
+                      v-if="c.author_id === auth.user.id"
+                      aria-label="Edit comment"
+                      @click="startEdit(c)"
+                    >
                       <Icon icon="lucide:pencil" width="14" />
                     </button>
-                    <button aria-label="Delete comment" @click="deleteComment(c.id)">
+
+                    <button
+                      v-if="c.author_id === auth.user.id || auth.user.is_admin"
+                      aria-label="Delete comment"
+                      @click="deleteComment(c.id)"
+                    >
                       <Icon icon="lucide:trash-2" width="14" />
+                    </button>
+
+                    <button
+                      v-if="c.author_id !== auth.user.id"
+                      class="flag"
+                      aria-label="Report comment"
+                      @click="reporting = { type: 'comment', id: c.id }"
+                    >
+                      <Icon icon="lucide:flag" width="14" />
                     </button>
                   </div>
                 </template>
@@ -219,6 +251,13 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <ReportModal
+      v-if="reporting"
+      :target-type="reporting.type"
+      :target-id="reporting.id"
+      @close="reporting = null"
+    />
   </div>
 </template>
 
@@ -233,12 +272,6 @@ onUnmounted(() => {
   justify-content: center;
   padding: 24px;
   overflow-y: auto;
-}
-
-.handle {
-  color: var(--text-dim);
-  font-size: 13px;
-  letter-spacing: 0.5px;
 }
 
 .modal {
@@ -294,6 +327,12 @@ onUnmounted(() => {
   line-height: 1;
 }
 
+.handle {
+  color: var(--text-dim);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
 .stat {
   display: inline-flex;
   align-items: center;
@@ -307,11 +346,17 @@ onUnmounted(() => {
   border-radius: 999px;
 }
 
-.del-post {
+.bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
   background: #3a3a3a;
   color: var(--text-dim);
   border: none;
@@ -322,7 +367,7 @@ onUnmounted(() => {
   transition: background 0.12s, color 0.12s;
 }
 
-.del-post:hover {
+.icon-btn:hover {
   background: var(--danger);
   color: #fff;
 }
@@ -338,14 +383,6 @@ onUnmounted(() => {
   width: 52px;
   height: 36px;
   cursor: pointer;
-}
-
-.bar > .close:first-of-type {
-  margin-left: auto;
-}
-
-.del-post + .close {
-  margin-left: 0;
 }
 
 .avatar {
@@ -520,6 +557,10 @@ li:hover .c-actions {
 
 .c-actions button:hover {
   color: var(--accent);
+}
+
+.c-actions .flag:hover {
+  color: var(--danger);
 }
 
 .edit-box textarea {

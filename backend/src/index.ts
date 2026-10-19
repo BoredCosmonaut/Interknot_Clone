@@ -14,6 +14,10 @@ import { registerSocketHandler } from './sockets/index.js';
 import cors from 'cors'
 import { setIo } from './sockets/io.js';
 import rateLimit from 'express-rate-limit';
+import adminRoutes from './routes/admin.route.js';
+import reportRoutes from './routes/report.routes.js';
+
+const origin = process.env.CORS_ORIGIN || 'http://localhost:5173';
 const app = express();
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -23,7 +27,7 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 })
 
-app.use(cors({origin:process.env.CORS_ORIGIN}))
+app.use(cors({origin}))
 app.use(express.json());
 app.use('/api', rateLimit({ windowMs: 60 * 1000, max: 120 }));
 app.use('/uploads',express.static(('uploads')))
@@ -33,7 +37,9 @@ app.use('/api/posts',postRoutes);
 app.use('/api/users',userRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificanRoutes);
-
+app.use('/api/reports', reportRoutes);
+app.use('/api/admin', adminRoutes);
+app.set('trust proxy', 1);
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
@@ -48,7 +54,7 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 
 const port = Number(process.env.PORT) || 3000;
 const server = http.createServer(app)
-const io = new Server(server, { cors: { origin: 'http://localhost:5173' } });
+const io = new Server(server, { cors: { origin} });
 setIo(io);
 app.use(express.static('public'));  
 

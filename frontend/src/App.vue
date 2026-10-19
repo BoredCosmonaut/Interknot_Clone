@@ -122,6 +122,10 @@ function logout() {
       <span>MESSAGES</span>
       <span v-if="unread > 0" class="badge">{{ unread }}</span>
     </RouterLink>
+    <RouterLink v-if="auth.user?.is_admin" to="/admin" class="nav-link">
+      <Icon icon="lucide:shield" width="16" />
+      <span>ADMIN</span>
+    </RouterLink>
     <div class="bell-wrap">
       <button class="bell" aria-label="Notifications" @click="openNotifs">
         <Icon icon="lucide:bell" width="18" />

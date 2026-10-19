@@ -54,12 +54,13 @@ export async function login(req:Request,res:Response) {
             return res.status(401).json({ error: 'Invalid username or password' });
         }
 
-        const token = signToken({ userId: user.id, username: user.username });
+        const token = signToken({ userId: user.id, username: user.username,isAdmin:user.is_admin });
         return res.status(200).json({
         token,
         user: {
             id: user.id,
             username: user.username,
+            is_admin:user.is_admin,
             display_name: user.display_name,
             avatar_url: user.avatar_url,
             bio: user.bio,

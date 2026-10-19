@@ -6,6 +6,7 @@ import { disconnectSocket } from "@/lib/socket";
 export interface AuthUser {
     id: number;
     username: string;
+    is_admin: boolean;
     display_name: string;
     avatar_url: string;
     bio: string | null;

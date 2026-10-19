@@ -108,3 +108,12 @@ export async function deletePost(id:number,authorId:number): Promise<Post | null
 
     return result.rows[0] ?? null;
 }
+
+export async function deletePostAsAdmin(id:number): Promise<Post | null> {
+    const result = await pool.query<Post>(
+        `DELETE FROM posts WHERE id = $1 RETURNING *`,
+        [id]
+    );
+
+    return result.rows[0] ?? null;
+}

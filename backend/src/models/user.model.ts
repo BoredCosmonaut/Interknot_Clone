@@ -8,6 +8,7 @@ export interface User {
     bio: string | null;
     created_at: Date;
     display_name: string;
+    is_admin:boolean;
 }
 
 export type publicUser = Omit<User,'password_hash'>;
