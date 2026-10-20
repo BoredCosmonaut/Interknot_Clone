@@ -1,9 +1,10 @@
 <script setup lang="ts">
     import type { PostWithAuthor } from '@/types';
+    import { API_BASE } from '@/lib/config';
 
     defineProps<{post: PostWithAuthor}>();
 
-    const base = import.meta.env.VITE_API_URL
+    const base = API_BASE;
 </script>
 
 <template>
