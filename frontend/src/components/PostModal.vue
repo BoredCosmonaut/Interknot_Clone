@@ -6,6 +6,8 @@ import { useAuthStore } from '@/stores/auth';
 import type { PostWithAuthor } from '@/types';
 import ReportModal from '@/components/ReportModal.vue';
 import { API_BASE } from '@/lib/config';
+import { RouterLink } from 'vue-router';
+
 const props = defineProps<{ post: PostWithAuthor }>();
 const emit = defineEmits<{ close: []; changed: [] }>();
 
@@ -131,10 +133,24 @@ onUnmounted(() => {
   <div class="backdrop" @click.self="emit('close')">
     <div class="modal">
       <header class="bar">
-        <img class="avatar" :src="base + post.author_avatar_url" alt="" />
+        <RouterLink
+          :to="`/u/${post.author_username}`"
+          class="avatar-link"
+          :aria-label="`View ${post.author_display_name}'s profile`"
+          @click="emit('close')"
+        >
+          <img class="avatar" :src="base + post.author_avatar_url" alt="" />
+        </RouterLink>
+
         <div class="who">
-          <span class="name">{{ post.author_display_name }}</span>
-          <span class="handle">@{{ post.author_username }}</span>
+          <RouterLink
+            :to="`/u/${post.author_username}`"
+            class="who-link"
+            @click="emit('close')"
+          >
+            <span class="name">{{ post.author_display_name }}</span>
+            <span class="handle">@{{ post.author_username }}</span>
+          </RouterLink>
           <span class="stat">
             <Icon icon="lucide:message-circle" width="12" />
             {{ comments.length }}
@@ -181,11 +197,24 @@ onUnmounted(() => {
         <div class="comment-col">
           <ul>
             <li v-for="(c, i) in comments" :key="c.id">
-              <img class="avatar sm" :src="base + c.author_avatar_url" alt="" />
+              <RouterLink
+                :to="`/u/${c.author_username}`"
+                class="avatar-link"
+                :aria-label="`View ${c.author_display_name}'s profile`"
+                @click="emit('close')"
+              >
+                <img class="avatar sm" :src="base + c.author_avatar_url" alt="" />
+              </RouterLink>
 
               <div class="c-body">
                 <div class="c-head">
-                  <span class="c-name">{{ c.author_display_name }}</span>
+                  <RouterLink
+                    :to="`/u/${c.author_username}`"
+                    class="c-name"
+                    @click="emit('close')"
+                  >
+                    {{ c.author_display_name }}
+                  </RouterLink>
                   <span v-if="c.edited_at" class="edited">edited</span>
                   <span class="floor">{{ i + 1 }}F</span>
                 </div>
@@ -293,7 +322,7 @@ onUnmounted(() => {
   pointer-events: none;
   opacity: 0.22;
   transform: rotate(-8deg);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='276'><text x='12' y='126' font-family='sans-serif' font-size='120' font-weight='900' letter-spacing='2' fill='%23555555'>COSMOKNOT</text><text x='16' y='170' font-family='sans-serif' font-size='36' font-weight='900' letter-spacing='8' fill='%23555555'>THE PROXY NETWORK</text></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='276'><text x='12' y='126' font-family='sans-serif' font-size='120' font-weight='900' letter-spacing='2' fill='%23555555'>COSMOKNOT</text><text x='16' y='170' font-family='sans-serif' font-size='36' font-weight='900' letter-spacing='8' fill='%23555555'>FRIENDS ONLY</text></svg>");
   background-repeat: repeat;
   background-size: 900px 276px;
 }
@@ -325,6 +354,19 @@ onUnmounted(() => {
   font-weight: 700;
   font-size: 20px;
   line-height: 1;
+  transition: color 0.12s;
+}
+
+.who-link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.who-link:hover .name {
+  color: var(--accent);
 }
 
 .handle {
@@ -396,6 +438,25 @@ onUnmounted(() => {
 .avatar.sm {
   width: 38px;
   height: 38px;
+}
+
+.avatar-link {
+  display: block;
+  flex-shrink: 0;
+  border-radius: 50%;
+  transition: transform 0.12s;
+}
+
+.avatar-link:hover {
+  transform: scale(1.06);
+}
+
+.avatar-link .avatar {
+  display: block;
+}
+
+li .avatar-link {
+  align-self: flex-start;
 }
 
 .columns {
@@ -506,6 +567,13 @@ li {
 .c-name {
   font-weight: 700;
   font-size: 16px;
+  color: var(--text);
+  text-decoration: none;
+  transition: color 0.12s;
+}
+
+.c-name:hover {
+  color: var(--accent);
 }
 
 .edited {
