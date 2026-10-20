@@ -5,9 +5,9 @@ import router from './router';
 import { useAuthStore } from './stores/auth';
 import { handleUnauthorized } from './lib/api';
 import './assets/base.css';
-
+import { initAnalytics } from '@/lib/analytics';
 const app = createApp(App);
-
+initAnalytics();
 app.use(createPinia());  
 app.use(router);
 
