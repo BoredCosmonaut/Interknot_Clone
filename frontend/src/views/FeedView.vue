@@ -94,7 +94,7 @@
 <template>
   <div class="feed-page">
     <div class="tag-row">
-      <span class="pill">INTER-KNOT</span>
+      <span class="pill">COSMOKNOT</span>
       <span class="meta">PUBLIC FEED</span>
       <button class="create-btn" @click="creating = true">+ CREATE POST</button>
     </div>

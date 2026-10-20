@@ -118,7 +118,7 @@ watch(() => route.params.userId, loadThread);
 <template>
   <div class="messages-page">
     <div class="tag-row">
-      <span class="pill">KNOCK KNOCK</span>
+      <span class="pill">INBOX</span>
       <span class="meta">DIRECT MESSAGES</span>
     </div>
 

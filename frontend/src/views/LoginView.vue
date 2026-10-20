@@ -71,6 +71,12 @@ async function submit() {
       <button class="switch" @click="mode = mode === 'login' ? 'signup' : 'login'">
         {{ mode === 'login' ? 'no account? register →' : 'already registered? access →' }}
       </button>
+      <p class="disclaimer">
+        Fan-made project inspired by the Inter-Knot from
+        <a href="https://zenless.hoyoverse.com/" target="_blank" rel="noopener noreferrer">Zenless Zone Zero</a>.
+        Not affiliated with or endorsed by HoYoverse.
+        Zenless Zone Zero is a trademark of HoYoverse.
+      </p>
     </div>
   </div>
 </template>
@@ -239,6 +245,23 @@ button[type='submit']:disabled {
 }
 
 .switch:hover {
+  color: var(--accent);
+}
+
+.disclaimer {
+  margin: 28px 0 0 4px;
+  max-width: 380px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #5a5a5a;
+}
+
+.disclaimer a {
+  color: var(--text-dim);
+  text-decoration: underline;
+}
+
+.disclaimer a:hover {
   color: var(--accent);
 }
 </style>

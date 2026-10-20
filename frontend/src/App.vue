@@ -115,7 +115,7 @@ function logout() {
   <nav v-if="auth.isLoggedIn" class="topbar">
     <RouterLink to="/" class="home">
       <Icon icon="lucide:house" width="16" />
-      <span>INTER-KNOT</span>
+      <span>COSMOKNOT</span>
     </RouterLink>
     <RouterLink to="/messages" class="nav-link">
       <Icon icon="lucide:mail" width="16" />
@@ -169,6 +169,9 @@ function logout() {
   </nav>
 
   <RouterView />
+  <footer v-if="auth.isLoggedIn" class="site-footer">
+    Fan project inspired by Zenless Zone Zero · not affiliated with HoYoverse
+  </footer>
 </template>
 
 <style scoped>
@@ -365,6 +368,13 @@ function logout() {
   font-size: 13px;
   padding: 12px;
   margin: 0;
+}
+
+.site-footer {
+  padding: 24px;
+  text-align: center;
+  font-size: 11px;
+  color: #5a5a5a;
 }
 
 </style>
