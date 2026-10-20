@@ -28,7 +28,7 @@ export async function create(req:Request,res:Response) {
     
 
     try {
-        await sharp(req.file.buffer, { animated: true })
+        await sharp(req.file.buffer, { animated: true,limitInputPixels: 40_000_000 })
         .rotate()
         .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
         .webp({ quality: 82,effort:2 })

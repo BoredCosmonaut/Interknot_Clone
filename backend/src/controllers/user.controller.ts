@@ -88,7 +88,7 @@ export async function updateMe(req: Request, res: Response) {
         if (req.file) {
         const filename = `${crypto.randomBytes(16).toString('hex')}.webp`;
 
-        await sharp(req.file.buffer)
+        await sharp(req.file.buffer, {limitInputPixels: 40_000_000})
             .rotate()
             .resize(256, 256, { fit: 'cover' })
             .webp({ quality: 85 })
