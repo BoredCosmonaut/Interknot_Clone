@@ -77,7 +77,6 @@
       await nextTick();
 
       observer = new IntersectionObserver((entries) => {
-        console.log('sentinel visible:', entries[0]?.isIntersecting);
         if(entries[0]?.isIntersecting) loadMore();
       }, {rootMargin:'400px'});
 

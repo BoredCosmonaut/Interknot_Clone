@@ -5,7 +5,7 @@ import { Icon } from '@iconify/vue';
 import { ref, watch } from 'vue';
 import { getSocket,disconnectSocket } from '@/lib/socket';
 import { api } from '@/lib/api';
-
+import { API_BASE } from '@/lib/config';
 
 interface NotificationItem {
   id:number;
@@ -24,7 +24,7 @@ const route = useRoute();
 const unread = ref(0);
 const auth = useAuthStore();
 const router = useRouter();
-const base = import.meta.env.VITE_API_URL;
+const base = API_BASE;
 const notifs = ref<NotificationItem[]>([]);
 const notifCount = ref(0);
 const notifOpen = ref(false);
@@ -62,7 +62,6 @@ function watchMessages() {
   getSocket().on('message:new', (msg: { sender_id: number }) => {
     const mine = msg.sender_id === auth.user?.id;
     const fromThisThread = route.path === `/messages/${msg.sender_id}`;
-    console.log('badge check:', { sender: msg.sender_id, path: route.path, mine, fromThisThread });
     if (!mine && !fromThisThread) unread.value++;
   });
 }
@@ -70,7 +69,6 @@ function watchMessages() {
 async function loadUnread() {
   try {
     const res = await api<{count:number}>('/api/messages/unread');
-    console.log('unread count:', res.count);
     unread.value = res.count;
   } catch  {
     

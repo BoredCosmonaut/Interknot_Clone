@@ -7,10 +7,10 @@ import { getSocket } from '@/lib/socket';
 import { useAuthStore } from '@/stores/auth';
 import type { MessageWithSender, ConversationSummary } from '@/types';
 import ReportModal from '@/components/ReportModal.vue';
-
+import { API_BASE } from '@/lib/config';
 const route = useRoute();
 const auth = useAuthStore();
-const base = import.meta.env.VITE_API_URL;
+const base = API_BASE;
 
 const conversations = ref<ConversationSummary[]>([]);
 const messages = ref<MessageWithSender[]>([]);

@@ -3,7 +3,7 @@ import { ref, onMounted, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import { RouterLink } from 'vue-router';
 import { api, ApiError } from '@/lib/api';
-
+import { API_BASE } from '@/lib/config';
 type ReportTarget = 'post' | 'comment' | 'user' | 'message';
 type ReportStatus = 'open' | 'resolved' | 'dismissed';
 
@@ -26,7 +26,7 @@ interface Report {
   target_display_name: string | null;
 }
 
-const base = import.meta.env.VITE_API_URL;
+const base = API_BASE;
 
 const tab = ref<ReportStatus>('open');
 const reports = ref<Report[]>([]);

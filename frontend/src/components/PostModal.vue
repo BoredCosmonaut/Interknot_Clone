@@ -5,12 +5,12 @@ import { api, ApiError } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
 import type { PostWithAuthor } from '@/types';
 import ReportModal from '@/components/ReportModal.vue';
-
+import { API_BASE } from '@/lib/config';
 const props = defineProps<{ post: PostWithAuthor }>();
 const emit = defineEmits<{ close: []; changed: [] }>();
 
 const auth = useAuthStore();
-const base = import.meta.env.VITE_API_URL;
+const base = API_BASE;
 
 interface CommentWithAuthor {
   id: number;

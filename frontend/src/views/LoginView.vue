@@ -71,6 +71,12 @@ async function submit() {
       <button class="switch" @click="mode = mode === 'login' ? 'signup' : 'login'">
         {{ mode === 'login' ? 'no account? register →' : 'already registered? access →' }}
       </button>
+      <p class="credit">
+        Built by
+        <a href="https://github.com/BoredCosmonaut" target="_blank" rel="noopener noreferrer">@BoredCosmonaut</a>
+        ·
+        <a href="https://github.com/BoredCosmonaut/Interknot_Clone" target="_blank" rel="noopener noreferrer">source</a>
+      </p>
       <p class="disclaimer">
         Fan-made project inspired by the Inter-Knot from
         <a href="https://zenless.hoyoverse.com/" target="_blank" rel="noopener noreferrer">Zenless Zone Zero</a>.
@@ -262,6 +268,21 @@ button[type='submit']:disabled {
 }
 
 .disclaimer a:hover {
+  color: var(--accent);
+}
+
+.credit {
+  margin: 28px 0 0 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.credit a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.credit a:hover {
   color: var(--accent);
 }
 </style>

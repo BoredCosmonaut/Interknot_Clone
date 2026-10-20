@@ -8,7 +8,7 @@
     import PostCard from '@/components/PostCard.vue';
     import PostModal from '@/components/PostModal.vue';
     import ReportModal from '@/components/ReportModal.vue';
-
+    import { API_BASE } from '@/lib/config';
 
     interface PublicUser {
         id:number,
@@ -22,7 +22,7 @@
     const reportingUser = ref(false);
     const route = useRoute();
     const auth = useAuthStore();
-    const base = import.meta.env.VITE_API_URL;
+    const base = API_BASE;
 
     const user = ref<PublicUser | null>(null);
     const posts = ref<PostWithAuthor[]>([]);
@@ -409,7 +409,7 @@
   pointer-events: none;
   opacity: 0.22;
   transform: rotate(-8deg);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='276'><text x='12' y='126' font-family='sans-serif' font-size='120' font-weight='900' letter-spacing='2' fill='%23555555'>INTER-KNOT</text><text x='16' y='170' font-family='sans-serif' font-size='36' font-weight='900' letter-spacing='8' fill='%23555555'>THE PROXY NETWORK</text></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='900' height='276'><text x='12' y='126' font-family='sans-serif' font-size='120' font-weight='900' letter-spacing='2' fill='%23555555'>COSMOKNOT</text><text x='16' y='170' font-family='sans-serif' font-size='36' font-weight='900' letter-spacing='8' fill='%23555555'>THE PROXY NETWORK</text></svg>");
   background-repeat: repeat;
   background-size: 900px 276px;
 }
