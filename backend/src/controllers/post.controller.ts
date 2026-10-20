@@ -25,20 +25,22 @@ export async function create(req:Request,res:Response) {
 
     const name = crypto.randomBytes(16).toString('hex');
     const filename = `${name}.webp`;
-
-    await sharp(req.file.buffer, { animated: true })
-    .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
-    .webp({ quality: 82 })
-    .toFile(path.join('uploads', filename));
-
-    const imageUrl = `/uploads/${filename}`;
+    
 
     try {
+        await sharp(req.file.buffer, { animated: true })
+        .rotate()
+        .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 82,effort:2 })
+        .toFile(path.join('uploads', filename));
+
+        const imageUrl = `/uploads/${filename}`;
         const post = await createPost(req.user.userId,title.trim(),content.trim(),imageUrl);
         return res.status(201).json(post);
     } catch (err) {
+        await fs.unlink(path.join('uploads', filename)).catch(() => {});
         console.error('failed to create post:',err);
-        return res.status(500).json({error:'Somehting went wrong'});
+        return res.status(500).json({error:'Something went wrong'});
     }
 
 }
@@ -79,7 +81,7 @@ export async function byId(req:Request,res:Response) {
 
 export async function removePost(req:Request,res:Response) {
     if(!req.user) {
-        return res.status(401).json({message:'Not logged in'});
+        return res.status(401).json({error:'Not logged in'});
     }
 
     const id = Number(req.params.id);

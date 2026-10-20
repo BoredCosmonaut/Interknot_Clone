@@ -89,6 +89,7 @@ export async function updateMe(req: Request, res: Response) {
         const filename = `${crypto.randomBytes(16).toString('hex')}.webp`;
 
         await sharp(req.file.buffer)
+            .rotate()
             .resize(256, 256, { fit: 'cover' })
             .webp({ quality: 85 })
             .toFile(path.join('uploads', filename));

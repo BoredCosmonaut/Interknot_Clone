@@ -36,7 +36,7 @@
         form.append('image',file.value);
 
         try {
-            await api('/api/posts',{method:'POST',body:form});
+            await api('/api/posts',{method:'POST',body:form},60000);
             emit('created');
             emit('close');
         } catch (err) {

@@ -80,7 +80,7 @@
         user.value = await api<PublicUser>('/api/users/me', {
           method: 'PATCH',
           body: form,
-        });
+        },60000);
 
         if (isMe.value && user.value && auth.user) {
           auth.user = { ...auth.user, ...user.value };
